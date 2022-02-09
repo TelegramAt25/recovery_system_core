@@ -171,6 +171,11 @@ int Flash(FastbootDevice* device, const std::string& partition_name) {
     return result;
 }
 
+static void RemoveScratchPartition() {
+    AutoMountMetadata mount_metadata;
+    android::fs_mgr::TeardownAllOverlayForMountPoint();
+}
+
 bool UpdateSuper(FastbootDevice* device, const std::string& super_name, bool wipe) {
     std::vector<char> data = std::move(device->download_data());
     if (data.empty()) {
@@ -203,7 +208,7 @@ bool UpdateSuper(FastbootDevice* device, const std::string& super_name, bool wip
         if (!FlashPartitionTable(super_name, *new_metadata.get())) {
             return device->WriteFail("Unable to flash new partition table");
         }
-        android::fs_mgr::TeardownAllOverlayForMountPoint();
+        RemoveScratchPartition();
         sync();
         return device->WriteOkay("Successfully flashed partition table");
     }
@@ -247,7 +252,7 @@ bool UpdateSuper(FastbootDevice* device, const std::string& super_name, bool wip
     if (!UpdateAllPartitionMetadata(device, super_name, *new_metadata.get())) {
         return device->WriteFail("Unable to write new partition table");
     }
-    android::fs_mgr::TeardownAllOverlayForMountPoint();
+    RemoveScratchPartition();
     sync();
     return device->WriteOkay("Successfully updated partition table");
 }
